@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeOperators, FlexibleContexts, UndecidableInstances #-}
 
 module Data.Binary.DerivingVia
-( Alternatively
+( Alternatively(..)
 ) where
 
 import Control.Applicative
