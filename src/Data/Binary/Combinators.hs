@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds, PolyKinds, TypeOperators, GADTs #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Binary.Combinators
 ( Some(..)
@@ -20,7 +21,7 @@ import Data.Proxy
 import GHC.TypeLits
 import Numeric
 
-newtype Some a = Some { getSome :: [a] }
+newtype Some a = Some { getSome :: [a] } deriving (Eq, Ord)
 
 instance Show a => Show (Some a) where
   show = show . getSome
@@ -30,7 +31,7 @@ instance Binary a => Binary (Some a) where
   put = mapM_ put . getSome
 
 
-newtype CountedBy ty a = CountedBy { getCounted :: [a] }
+newtype CountedBy ty a = CountedBy { getCounted :: [a] } deriving (Eq, Ord)
 
 instance Show a => Show (CountedBy ty a) where
   show = show . getCounted
@@ -41,14 +42,14 @@ instance (Integral ty, Binary ty, Binary a) => Binary (CountedBy ty a) where
   put (CountedBy xs) = put (fromIntegral $ length xs :: ty) >> mapM_ put xs
 
 
-data SkipCount ty (n :: Nat) = SkipCount deriving (Show)
+data SkipCount ty (n :: Nat) = SkipCount deriving (Eq, Ord, Show)
 
 instance (Num ty, Binary ty, KnownNat n) => Binary (SkipCount ty n) where
   get   = replicateM_ (fromIntegral $ natVal (Proxy :: Proxy n)) (get :: Get ty) $> SkipCount
   put _ = replicateM_ (fromIntegral $ natVal (Proxy :: Proxy n)) $ put (0 :: ty)
 
 
-data SkipByte (n :: Nat) = SkipByte deriving (Show)
+data SkipByte (n :: Nat) = SkipByte deriving (Eq, Ord, Show)
 
 instance (KnownNat n) => Binary (SkipByte n) where
   get   = do nextByte <- lookAhead get
@@ -64,6 +65,9 @@ instance (KnownNat n) => Binary (SkipByte n) where
 data MatchBytes :: Symbol -> [Nat] -> Type where
   ConsumeNil  :: MatchBytes ctx '[]
   ConsumeCons :: KnownNat n => Proxy n -> MatchBytes ctx ns -> MatchBytes ctx (n ': ns)
+
+deriving instance Eq (MatchBytes s ns)
+deriving instance Ord (MatchBytes s ns)
 
 instance Binary (MatchBytes ctx '[]) where
   get = pure ConsumeNil
