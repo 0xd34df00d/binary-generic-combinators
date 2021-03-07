@@ -1,3 +1,5 @@
 # Changelog for binary-generic-combinators
 
-## Unreleased changes
+## v0.4.0.0
+
+- Initial release as a separate library.
