@@ -22,6 +22,7 @@ import Data.Kind
 import Data.Proxy
 import GHC.TypeLits
 import Numeric
+import Test.QuickCheck
 
 
 newtype Many a = Many { getMany :: [a] } deriving (Eq, Ord)
@@ -33,6 +34,10 @@ instance Binary a => Binary (Many a) where
   get = Many <$> many get
   put = mapM_ put . getMany
 
+instance Arbitrary a => Arbitrary (Many a) where
+  arbitrary = Many <$> arbitrary
+  shrink (Many xs) = Many <$> shrink xs
+
 
 newtype Some a = Some { getSome :: [a] } deriving (Eq, Ord)
 
@@ -42,6 +47,10 @@ instance Show a => Show (Some a) where
 instance Binary a => Binary (Some a) where
   get = Some <$> some get
   put = mapM_ put . getSome
+
+instance Arbitrary a => Arbitrary (Some a) where
+  arbitrary = Some . getNonEmpty <$> arbitrary
+  shrink (Some xs) = Some <$> filter (not . null) (shrink xs)
 
 
 newtype CountedBy ty a = CountedBy { getCounted :: [a] } deriving (Eq, Ord)
@@ -54,12 +63,19 @@ instance (Integral ty, Binary ty, Binary a) => Binary (CountedBy ty a) where
            CountedBy <$> replicateM (fromIntegral cnt) get
   put (CountedBy xs) = put (fromIntegral $ length xs :: ty) >> mapM_ put xs
 
+instance Arbitrary a => Arbitrary (CountedBy ty a) where
+  arbitrary = CountedBy <$> arbitrary
+  shrink (CountedBy xs) = CountedBy <$> shrink xs
+
 
 data SkipCount ty (n :: Nat) = SkipCount deriving (Eq, Ord, Show)
 
 instance (Num ty, Binary ty, KnownNat n) => Binary (SkipCount ty n) where
   get   = replicateM_ (fromIntegral $ natVal (Proxy :: Proxy n)) (get :: Get ty) $> SkipCount
   put _ = replicateM_ (fromIntegral $ natVal (Proxy :: Proxy n)) $ put (0 :: ty)
+
+instance Arbitrary (SkipCount ty n) where
+  arbitrary = pure SkipCount
 
 
 data SkipByte (n :: Nat) = SkipByte deriving (Eq, Ord, Show)
@@ -73,6 +89,9 @@ instance (KnownNat n) => Binary (SkipByte n) where
       expected :: Word8
       expected = fromIntegral $ natVal (Proxy :: Proxy n)
   put _ = pure ()
+
+instance Arbitrary (SkipByte n) where
+  arbitrary = pure SkipByte
 
 
 data MatchBytes :: Symbol -> [Nat] -> Type where
@@ -119,3 +138,6 @@ instance (KnownNat n, MatchBytesSing ctx ns) => MatchBytesSing ctx (n ': ns) whe
 
 matchBytes :: MatchBytesSing ctx ns => MatchBytes ctx ns
 matchBytes = matchBytesSing
+
+instance MatchBytesSing ctx ns => Arbitrary (MatchBytes ctx ns) where
+  arbitrary = pure matchBytes

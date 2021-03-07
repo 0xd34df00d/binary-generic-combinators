@@ -18,6 +18,7 @@ description:         Please see the README on GitHub at <https://github.com/0xd3
 dependencies:
 - base >= 4.7 && < 5
 - binary
+- QuickCheck
 
 ghc-options:
 - -Wall
