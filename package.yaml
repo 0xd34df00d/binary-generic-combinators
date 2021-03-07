@@ -10,9 +10,8 @@ extra-source-files:
 - README.md
 - ChangeLog.md
 
-# Metadata used when publishing your package
-# synopsis:            Short description of your package
-# category:            Web
+synopsis:            Combinators and utilities to make Generic-based deriving of Binary easier and more expressive
+category:            Data, Parsing
 
 description:         Please see the README on GitHub at <https://github.com/0xd34df00d/binary-generic-combinators#readme>
 
