@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds, PolyKinds, TypeOperators, GADTs #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts, MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving, DerivingStrategies, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving, DerivingStrategies, GeneralizedNewtypeDeriving, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 
 module Data.Binary.Combinators
 ( Many(..)
@@ -25,7 +25,7 @@ import Numeric
 import Test.QuickCheck
 
 
-newtype Many a = Many { getMany :: [a] } deriving stock (Eq, Ord)
+newtype Many a = Many { getMany :: [a] } deriving stock (Eq, Ord, Functor, Foldable, Traversable)
                                          deriving newtype (Show, Arbitrary)
 
 instance Binary a => Binary (Many a) where
@@ -33,7 +33,7 @@ instance Binary a => Binary (Many a) where
   put = mapM_ put . getMany
 
 
-newtype Some a = Some { getSome :: [a] } deriving (Eq, Ord)
+newtype Some a = Some { getSome :: [a] } deriving (Eq, Ord, Functor, Foldable, Traversable)
                                          deriving newtype (Show)
 
 instance Binary a => Binary (Some a) where
@@ -45,7 +45,7 @@ instance Arbitrary a => Arbitrary (Some a) where
   shrink (Some xs) = Some <$> filter (not . null) (shrink xs)
 
 
-newtype CountedBy ty a = CountedBy { getCounted :: [a] } deriving (Eq, Ord)
+newtype CountedBy ty a = CountedBy { getCounted :: [a] } deriving (Eq, Ord, Functor, Foldable, Traversable)
                                                          deriving newtype (Show, Arbitrary)
 
 instance (Integral ty, Binary ty, Binary a) => Binary (CountedBy ty a) where
