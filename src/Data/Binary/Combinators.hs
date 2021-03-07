@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds, PolyKinds, TypeOperators, GADTs #-}
-{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts, MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
@@ -10,6 +10,7 @@ module Data.Binary.Combinators
 , SkipCount(..)
 , SkipByte(..)
 , MatchBytes
+, matchBytes
 ) where
 
 import Control.Applicative
@@ -106,3 +107,15 @@ instance Show (MatchBytes ctx ns) where
       go :: MatchBytes ctx' ns' -> String
       go ConsumeNil = ""
       go (ConsumeCons proxy ns) = "0x" <> showHex (natVal proxy) " " <> go ns
+
+class MatchBytesSing ctx ns where
+  matchBytesSing :: MatchBytes ctx ns
+
+instance MatchBytesSing ctx '[] where
+  matchBytesSing = ConsumeNil
+
+instance (KnownNat n, MatchBytesSing ctx ns) => MatchBytesSing ctx (n ': ns) where
+  matchBytesSing = ConsumeCons Proxy matchBytesSing
+
+matchBytes :: MatchBytesSing ctx ns => MatchBytes ctx ns
+matchBytes = matchBytesSing
