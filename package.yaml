@@ -20,6 +20,9 @@ dependencies:
 - base >= 4.7 && < 5
 - binary
 
+ghc-options:
+- -Wall
+
 library:
   source-dirs: src
 
