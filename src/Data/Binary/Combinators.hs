@@ -4,7 +4,8 @@
 {-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Binary.Combinators
-( Some(..)
+( Many(..)
+, Some(..)
 , CountedBy(..)
 , SkipCount(..)
 , SkipByte(..)
@@ -20,6 +21,17 @@ import Data.Kind
 import Data.Proxy
 import GHC.TypeLits
 import Numeric
+
+
+newtype Many a = Many { getMany :: [a] } deriving (Eq, Ord)
+
+instance Show a => Show (Many a) where
+  show = show . getMany
+
+instance Binary a => Binary (Many a) where
+  get = Many <$> many get
+  put = mapM_ put . getMany
+
 
 newtype Some a = Some { getSome :: [a] } deriving (Eq, Ord)
 
