@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds, PolyKinds, TypeOperators, GADTs #-}
 {-# LANGUAGE FlexibleInstances, FlexibleContexts, MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving, DerivingStrategies, GeneralizedNewtypeDeriving, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE StandaloneDeriving, DeriveTraversable #-}
 
 module Data.Binary.Combinators
 ( Many(..)
@@ -25,16 +25,24 @@ import Numeric
 import Test.QuickCheck
 
 
-newtype Many a = Many { getMany :: [a] } deriving stock (Eq, Ord, Functor, Foldable, Traversable)
-                                         deriving newtype (Show, Arbitrary)
+newtype Many a = Many { getMany :: [a] } deriving (Eq, Ord, Functor, Foldable, Traversable)
+
+instance Show a => Show (Many a) where
+  show = show . getMany
 
 instance Binary a => Binary (Many a) where
   get = Many <$> many get
   put = mapM_ put . getMany
 
+instance Arbitrary a => Arbitrary (Many a) where
+  arbitrary = Many <$> arbitrary
+  shrink (Many xs) = Many <$> shrink xs
+
 
 newtype Some a = Some { getSome :: [a] } deriving (Eq, Ord, Functor, Foldable, Traversable)
-                                         deriving newtype (Show)
+
+instance Show a => Show (Some a) where
+  show = show . getSome
 
 instance Binary a => Binary (Some a) where
   get = Some <$> some get
@@ -46,12 +54,18 @@ instance Arbitrary a => Arbitrary (Some a) where
 
 
 newtype CountedBy ty a = CountedBy { getCounted :: [a] } deriving (Eq, Ord, Functor, Foldable, Traversable)
-                                                         deriving newtype (Show, Arbitrary)
+
+instance Show a => Show (CountedBy ty a) where
+  show = show . getCounted
 
 instance (Integral ty, Binary ty, Binary a) => Binary (CountedBy ty a) where
   get = do cnt :: ty <- get
            CountedBy <$> replicateM (fromIntegral cnt) get
   put (CountedBy xs) = put (fromIntegral $ length xs :: ty) >> mapM_ put xs
+
+instance Arbitrary a => Arbitrary (CountedBy ty a) where
+  arbitrary = CountedBy <$> arbitrary
+  shrink (CountedBy xs) = CountedBy <$> shrink xs
 
 
 data SkipCount ty (n :: Nat) = SkipCount deriving (Eq, Ord, Show)
