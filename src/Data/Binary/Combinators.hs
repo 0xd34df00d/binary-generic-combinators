@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances, FlexibleContexts, MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving, DeriveTraversable #-}
+{-# LANGUAGE Safe #-}
 
 module Data.Binary.Combinators
 ( Many(..)

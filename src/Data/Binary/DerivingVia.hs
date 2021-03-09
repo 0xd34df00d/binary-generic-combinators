@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeOperators, FlexibleContexts, UndecidableInstances #-}
+{-# LANGUAGE Safe #-}
 
 module Data.Binary.DerivingVia
 ( Alternatively(..)
