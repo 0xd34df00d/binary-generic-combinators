@@ -1,6 +1,11 @@
 {-# LANGUAGE TypeOperators, FlexibleContexts, UndecidableInstances #-}
 {-# LANGUAGE Safe #-}
 
+{-| Description : Deriving strategies for making 'GHC.Generics.Generic'-based 'Binary' instances more expressive.
+
+This module defines some types to be used with @DerivingVia@ when deriving 'Binary' instances.
+-}
+
 module Data.Binary.DerivingVia
 ( Alternatively(..)
 ) where
@@ -8,6 +13,23 @@ module Data.Binary.DerivingVia
 import Control.Applicative
 import Data.Binary
 import GHC.Generics
+
+-- | Try to deserialize each constructor of @a@ in order.
+--
+-- For sum types, stock 'Binary' writes (and expects to read) an integer denoting the index of the constructor.
+-- This isn't always what's needed. In the following example, the constructor is uniquely identified by the marker byte,
+-- and its index in the Haskell ADT is irrelevant:
+--
+-- > data JfifSegment
+-- >   = App0Segment (MatchByte "app0 segment" 0xdb, JfifApp0)
+-- >   | DqtSegment  (MatchByte "dqt segment"  0xdb, QuantTable)
+-- >   | SofSegment  (MatchByte "sof segment"  0xc0, SofInfo)
+-- >   | DhtSegment  (MatchByte "dht segment"  0xc4, HuffmanTable)
+-- >   | DriSegment  (MatchByte "dri segment"  0xdd, RestartInterval)
+-- >   | SosSegment  (MatchByte "sos segment"  0xda, SosImage)
+-- >   | UnknownSegment RawSegment
+-- >   deriving Generic
+-- >   deriving Binary via Alternatively JfifSegment
 
 newtype Alternatively a = Alternatively { getAlt :: a }
 

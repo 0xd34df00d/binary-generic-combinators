@@ -4,6 +4,21 @@
 {-# LANGUAGE StandaloneDeriving, DeriveTraversable #-}
 {-# LANGUAGE Safe #-}
 
+{-| Description : Combinators and utility types for making 'GHC.Generics.Generic'-based 'Binary' instances more expressive.
+
+This module defines a bunch of types to be used as fields of records with 'GHC.Generics.Generic'-based deriving of 'Binary' instances.
+For example:
+
+@
+data MyFileFormat = MyFileFormat
+  { header :: MatchBytes "my format header" '[ 0xd3, 0x4d, 0xf0, 0x0d ]
+  , slack :: SkipByte 0xff
+  , reserved :: SkipCount Word8 4
+  , subElements :: Some MyElement
+  } deriving (Generic, Binary)
+@
+-}
+
 module Data.Binary.Combinators
 ( Many(..)
 , Some(..)
@@ -12,6 +27,7 @@ module Data.Binary.Combinators
 , SkipByte(..)
 , MatchBytes
 , matchBytes
+, MatchByte
 ) where
 
 import Control.Applicative
@@ -26,6 +42,9 @@ import Numeric
 import Test.QuickCheck
 
 
+-- | Zero or more elements of @a@, parsing as long as the parser for @a@ succeeds.
+--
+-- @Many Word8@ will consume all your input!
 newtype Many a = Many { getMany :: [a] } deriving (Eq, Ord, Functor, Foldable, Traversable)
 
 instance Show a => Show (Many a) where
@@ -40,6 +59,9 @@ instance Arbitrary a => Arbitrary (Many a) where
   shrink (Many xs) = Many <$> shrink xs
 
 
+-- | One or more elements of @a@, parsing as long as the parser for @a@ succeeds.
+--
+-- @Some Word8@ will consume all your non-empty input!
 newtype Some a = Some { getSome :: [a] } deriving (Eq, Ord, Functor, Foldable, Traversable)
 
 instance Show a => Show (Some a) where
@@ -54,6 +76,7 @@ instance Arbitrary a => Arbitrary (Some a) where
   shrink (Some xs) = Some <$> filter (not . null) (shrink xs)
 
 
+-- | First, parse the elements count as type @ty@. Then, parse exactly as many elements of type @a@.
 newtype CountedBy ty a = CountedBy { getCounted :: [a] } deriving (Eq, Ord, Functor, Foldable, Traversable)
 
 instance Show a => Show (CountedBy ty a) where
@@ -69,6 +92,9 @@ instance Arbitrary a => Arbitrary (CountedBy ty a) where
   shrink (CountedBy xs) = CountedBy <$> shrink xs
 
 
+-- | Parse out and skip @n@ elements of type @ty@.
+--
+-- Serializing this type produces no bytes.
 data SkipCount ty (n :: Nat) = SkipCount deriving (Eq, Ord, Show)
 
 instance (Num ty, Binary ty, KnownNat n) => Binary (SkipCount ty n) where
@@ -79,6 +105,9 @@ instance Arbitrary (SkipCount ty n) where
   arbitrary = pure SkipCount
 
 
+-- | Skip any number of bytes with value @n@.
+--
+-- Serializing this type produces no bytes.
 data SkipByte (n :: Nat) = SkipByte deriving (Eq, Ord, Show)
 
 instance (KnownNat n) => Binary (SkipByte n) where
@@ -95,7 +124,14 @@ instance Arbitrary (SkipByte n) where
   arbitrary = pure SkipByte
 
 
-data MatchBytes :: Symbol -> [Nat] -> Type where
+-- | @MatchBytes str bytes@ ensures that the subsequent bytes in the input stream are the same as @bytes@.
+--
+-- @str@ can be used to denote the context in which @MatchBytes@ is used for better parse failure messages.
+-- For example, @MatchBytes "my format header" '[ 0xd3, 0x4d, 0xf0, 0x0d ]@ consumes four bytes from the input stream
+-- if they are equal to @[ 0xd3, 0x4d, 0xf0, 0x0d ]@ respectively, or fails otherwise.
+--
+-- Serializing this type produces the @bytes@.
+data MatchBytes (ctx :: Symbol) (bytes :: [Nat]) :: Type where
   ConsumeNil  :: MatchBytes ctx '[]
   ConsumeCons :: KnownNat n => Proxy n -> MatchBytes ctx ns -> MatchBytes ctx (n ': ns)
 
@@ -137,10 +173,12 @@ instance MatchBytesSing ctx '[] where
 instance (KnownNat n, MatchBytesSing ctx ns) => MatchBytesSing ctx (n ': ns) where
   matchBytesSing = ConsumeCons Proxy matchBytesSing
 
+-- | Produce the (singleton) value of type 'MatchBytes' @ctx ns@.
 matchBytes :: MatchBytesSing ctx ns => MatchBytes ctx ns
 matchBytes = matchBytesSing
 
 instance MatchBytesSing ctx ns => Arbitrary (MatchBytes ctx ns) where
   arbitrary = pure matchBytes
 
+-- | An alias for 'MatchBytes' when you only need to match a single byte.
 type MatchByte ctx byte = MatchBytes ctx '[ byte ]
