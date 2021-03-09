@@ -142,3 +142,5 @@ matchBytes = matchBytesSing
 
 instance MatchBytesSing ctx ns => Arbitrary (MatchBytes ctx ns) where
   arbitrary = pure matchBytes
+
+type MatchByte ctx byte = MatchBytes ctx '[ byte ]
