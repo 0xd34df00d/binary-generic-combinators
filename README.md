@@ -26,7 +26,7 @@ With stock `binary`, we'd have to write a custom instance by hand:
 data Element = Element { .. } deriving (Generic, Binary)
 data MyType = MyType { elems :: [Element] }
 
-instance Get MyType where
+instance Binary MyType where
   get = MyType <$> many
   put = mapM_ put . elems
 ```
@@ -63,12 +63,12 @@ This is not always what's needed.
 Consider:
 ```haskell
 data JfifSegment
-  = App0Segment (MatchBytes "app0 segment" '[ 0xdb ], JfifApp0)
-  | DqtSegment  (MatchBytes "dqt segment"  '[ 0xdb ], QuantTable)
-  | SofSegment  (MatchBytes "sof segment"  '[ 0xc0 ], SofInfo)
-  | DhtSegment  (MatchBytes "dht segment"  '[ 0xc4 ], HuffmanTable)
-  | DriSegment  (MatchBytes "dri segment"  '[ 0xdd ], RestartInterval)
-  | SosSegment  (MatchBytes "sos segment"  '[ 0xda ], SosImage)
+  = App0Segment (MatchByte "app0 segment" 0xdb, JfifApp0)
+  | DqtSegment  (MatchByte "dqt segment"  0xdb, QuantTable)
+  | SofSegment  (MatchByte "sof segment"  0xc0, SofInfo)
+  | DhtSegment  (MatchByte "dht segment"  0xc4, HuffmanTable)
+  | DriSegment  (MatchByte "dri segment"  0xdd, RestartInterval)
+  | SosSegment  (MatchByte "sos segment"  0xda, SosImage)
   | UnknownSegment RawSegment
 ```
 Here, the identifiers of the constructors are effectively defined in the standard (by the way, this is JPEG/JFIF).
@@ -82,12 +82,12 @@ Here, we can leverage that via this library's handy `Alternatively` type and `De
 {-# LANGUAGE DerivingVia #-}
 
 data JfifSegment
-  = App0Segment (MatchBytes "app0 segment" '[ 0xdb ], JfifApp0)
-  | DqtSegment  (MatchBytes "dqt segment"  '[ 0xdb ], QuantTable)
-  | SofSegment  (MatchBytes "sof segment"  '[ 0xc0 ], SofInfo)
-  | DhtSegment  (MatchBytes "dht segment"  '[ 0xc4 ], HuffmanTable)
-  | DriSegment  (MatchBytes "dri segment"  '[ 0xdd ], RestartInterval)
-  | SosSegment  (MatchBytes "sos segment"  '[ 0xda ], SosImage)
+  = App0Segment (MatchByte "app0 segment" 0xdb, JfifApp0)
+  | DqtSegment  (MatchByte "dqt segment"  0xdb, QuantTable)
+  | SofSegment  (MatchByte "sof segment"  0xc0, SofInfo)
+  | DhtSegment  (MatchByte "dht segment"  0xc4, HuffmanTable)
+  | DriSegment  (MatchByte "dri segment"  0xdd, RestartInterval)
+  | SosSegment  (MatchByte "sos segment"  0xda, SosImage)
   | UnknownSegment RawSegment
   deriving Generic
   deriving Binary via Alternatively JfifSegment
