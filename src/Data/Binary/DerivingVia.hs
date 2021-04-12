@@ -21,7 +21,7 @@ import GHC.Generics
 -- and its index in the Haskell ADT is irrelevant:
 --
 -- > data JfifSegment
--- >   = App0Segment (MatchByte "app0 segment" 0xdb, JfifApp0)
+-- >   = App0Segment (MatchByte "app0 segment" 0xe0, JfifApp0)
 -- >   | DqtSegment  (MatchByte "dqt segment"  0xdb, QuantTable)
 -- >   | SofSegment  (MatchByte "sof segment"  0xc0, SofInfo)
 -- >   | DhtSegment  (MatchByte "dht segment"  0xc4, HuffmanTable)
