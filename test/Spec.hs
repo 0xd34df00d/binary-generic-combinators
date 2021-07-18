@@ -12,7 +12,6 @@ import System.ByteOrder
 
 import Data.Binary.Combinators
 import Data.Binary.DerivingVia
-import Data.Binary.LE
 
 decenc :: Binary a => a -> a
 decenc = decode . encode
