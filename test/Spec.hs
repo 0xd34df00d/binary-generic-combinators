@@ -52,16 +52,19 @@ instance Arbitrary ComplexType where
   arbitrary = genericArbitrary
   shrink = genericShrink
 
+idHolds :: (Binary a, Eq a, Show a) => a -> Expectation
+idHolds val = decenc val `shouldBe` val
+
 main :: IO ()
 main = hspec $ do
   describe "Alternatively" $ do
     it "works for simple types" $ do
-      let val = SST11 matchBytes in decenc val `shouldBe` val
-      let val = SST12 matchBytes in decenc val `shouldBe` val
+      let val = SST11 matchBytes in idHolds val
+      let val = SST12 matchBytes in idHolds val
     it "is order-invariant" $ do
       decode (encode $ SST11 matchBytes) `shouldBe` SST22 matchBytes
   describe "decode . encode = id" $ do
-    it "for Many" $ property $ \(xs :: Many Int) -> decenc xs `shouldBe` xs
-    it "for Some" $ property $ \(xs :: Some Int) -> decenc xs `shouldBe` xs
-    it "for CountedBy" $ property $ \(xs :: CountedBy Word16 Int) -> decenc xs `shouldBe` xs
-    it "for complex types" $ property $ \(val :: ComplexType) -> decenc val `shouldBe` val
+    it "for Many" $ property $ \(xs :: Many Int) -> idHolds xs
+    it "for Some" $ property $ \(xs :: Some Int) -> idHolds xs
+    it "for CountedBy" $ property $ \(xs :: CountedBy Word16 Int) -> idHolds xs
+    it "for complex types" $ property $ \(val :: ComplexType) -> idHolds val
