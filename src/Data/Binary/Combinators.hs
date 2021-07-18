@@ -187,6 +187,10 @@ instance MatchBytesSing ctx ns => Arbitrary (MatchBytes ctx ns) where
 type MatchByte ctx byte = MatchBytes ctx '[ byte ]
 
 
+-- | An @a@ serialized in little endian byte order.
+--
+-- By default, @Binary@ serializes things in big endian byte order.
+-- Use this wrapper to get little endian-based serialization.
 newtype LE a = LE { getLE :: a } deriving (Eq, Ord)
 
 instance Show a => Show (LE a) where
