@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE Safe #-}
 
 module Data.Binary.LE where
 
@@ -8,10 +9,14 @@ import Data.Binary.Put
 import Data.Int
 import Test.QuickCheck
 
-newtype LE a = LE { getLE :: a } deriving (Eq, Ord, Arbitrary)
+newtype LE a = LE { getLE :: a } deriving (Eq, Ord)
 
 instance Show a => Show (LE a) where
   show = show . getLE
+
+instance Arbitrary a => Arbitrary (LE a) where
+  arbitrary = LE <$> arbitrary
+  shrink (LE n) = LE <$> shrink n
 
 instance Binary (LE Word16) where
   get = LE <$> getWord16le
