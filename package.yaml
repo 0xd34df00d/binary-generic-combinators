@@ -36,5 +36,6 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - binary-generic-combinators
+    - byte-order
     - hspec
     - generic-arbitrary

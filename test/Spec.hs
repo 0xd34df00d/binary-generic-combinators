@@ -3,13 +3,16 @@
 {-# LANGUAGE DataKinds #-}
 
 import Data.Binary
+import Data.Int
 import GHC.Generics
 import Test.Hspec
 import Test.QuickCheck
 import Test.QuickCheck.Arbitrary.Generic
+import System.ByteOrder
 
 import Data.Binary.Combinators
 import Data.Binary.DerivingVia
+import Data.Binary.LE
 
 decenc :: Binary a => a -> a
 decenc = decode . encode
@@ -68,3 +71,18 @@ main = hspec $ do
     it "for Some" $ property $ \(xs :: Some Int) -> idHolds xs
     it "for CountedBy" $ property $ \(xs :: CountedBy Word16 Int) -> idHolds xs
     it "for complex types" $ property $ \(val :: ComplexType) -> idHolds val
+    it "for LE Word32" $ property $ \(n :: LE Word32) -> idHolds n
+    it "for LE Int32" $ property $ \(n :: LE Int32) -> idHolds n
+    it "for LE Float" $ property $ \(n :: LE Float) -> idHolds n
+  describe "LE is actually little endian" $ do
+    it "encoding Word16" $ property $ \(n :: Word16) -> decode (encode $ LE n) `shouldBe` swapBytes n
+    it "encoding Word32" $ property $ \(n :: Word32) -> decode (encode $ LE n) `shouldBe` swapBytes n
+    it "encoding Word64" $ property $ \(n :: Word64) -> decode (encode $ LE n) `shouldBe` swapBytes n
+    it "decoding Word16" $ property $ \(n :: Word16) -> getLE (decode $ encode n) `shouldBe` swapBytes n
+    it "decoding Word32" $ property $ \(n :: Word32) -> getLE (decode $ encode n) `shouldBe` swapBytes n
+    it "decoding Word64" $ property $ \(n :: Word64) -> getLE (decode $ encode n) `shouldBe` swapBytes n
+
+swapBytes :: Bytes a => a -> a
+swapBytes n = case targetByteOrder of
+                   LittleEndian -> toBigEndian n
+                   BigEndian -> toLittleEndian n
