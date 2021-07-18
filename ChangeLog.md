@@ -1,5 +1,9 @@
 # Changelog for binary-generic-combinators
 
+## v0.4.3.0
+
+- Add `LE` newtype wrapper for little endian (de)serialization.
+
 ## v0.4.2.1
 
 - Minor fixes in examples and documentation.
