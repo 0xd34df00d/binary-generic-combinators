@@ -10,6 +10,9 @@ import Test.QuickCheck
 
 newtype LE a = LE { getLE :: a } deriving (Eq, Ord, Arbitrary)
 
+instance Show a => Show (LE a) where
+  show = show . getLE
+
 instance Binary (LE Word16) where
   get = LE <$> getWord16le
   put = putWord16le . getLE
