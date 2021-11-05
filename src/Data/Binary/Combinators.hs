@@ -134,6 +134,7 @@ instance Arbitrary (SkipByte n) where
 -- if they are equal to @[ 0xd3, 0x4d, 0xf0, 0x0d ]@ respectively, or fails otherwise.
 --
 -- Serializing this type produces the @bytes@.
+-- To easily create an object of this type, use the 'matchBytes' helper.
 data MatchBytes (ctx :: Symbol) (bytes :: [Nat]) :: Type where
   ConsumeNil  :: MatchBytes ctx '[]
   ConsumeCons :: KnownNat n => Proxy n -> MatchBytes ctx ns -> MatchBytes ctx (n ': ns)
