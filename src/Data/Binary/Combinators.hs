@@ -25,9 +25,15 @@ module Data.Binary.Combinators
 , CountedBy(..)
 , SkipCount(..)
 , SkipByte(..)
+
 , MatchBytes
 , matchBytes
+
 , MatchByte
+
+, MatchASCII
+, matchASCII
+
 , LE(..)
 ) where
 
@@ -36,6 +42,7 @@ import Control.Monad
 import Data.Binary
 import Data.Binary.Get
 import Data.Binary.Put
+import Data.Char
 import Data.Functor
 import Data.Int
 import Data.Kind
@@ -134,7 +141,9 @@ instance Arbitrary (SkipByte n) where
 -- if they are equal to @[ 0xd3, 0x4d, 0xf0, 0x0d ]@ respectively, or fails otherwise.
 --
 -- Serializing this type produces the @bytes@.
--- To easily create an object of this type, use the 'matchBytes' helper.
+-- To easily create a value of this type, use the 'matchBytes' helper.
+--
+-- See also 'MatchASCII'.
 data MatchBytes (ctx :: Symbol) (bytes :: [Nat]) :: Type where
   ConsumeNil  :: MatchBytes ctx '[]
   ConsumeCons :: KnownNat n => Proxy n -> MatchBytes ctx ns -> MatchBytes ctx (n ': ns)
@@ -186,6 +195,43 @@ instance MatchBytesSing ctx ns => Arbitrary (MatchBytes ctx ns) where
 
 -- | An alias for 'MatchBytes' when you only need to match a single byte.
 type MatchByte ctx byte = MatchBytes ctx '[ byte ]
+
+
+-- | @MatchASCII ctx ascii@ ensures that the subsequent bytes in the input stream match the ASCII characters @ascii@.
+--
+-- Serializing this type producers the @ascii@.
+-- To easily create a value of this type, use the 'matchASCII' helper.
+--
+-- See also 'MatchBytes'.
+data MatchASCII (ctx :: Symbol) (ascii :: Symbol) where
+  ConsumeASCII :: KnownSymbol ascii => MatchASCII ctx ascii
+
+deriving instance Eq (MatchASCII s ns)
+deriving instance Ord (MatchASCII s ns)
+
+toBytes :: forall ctx ascii. MatchASCII ctx ascii -> [Word8]
+toBytes ConsumeASCII = map (fromIntegral . ord) $ symbolVal (Proxy :: Proxy ascii)
+
+instance (KnownSymbol ctx, KnownSymbol ascii) => Binary (MatchASCII ctx ascii) where
+  get = do bytes <- replicateM (length expected) get
+           when (bytes /= expected) $ fail $ "Unexpected bytes " <> show bytes
+                                                                 <> " (or, as ASCII, `" <> (chr . fromIntegral <$> bytes) <> "`)"
+                                                                 <> " when parsing" <> symbolVal (Proxy :: Proxy ctx)
+           pure resSing
+    where
+      resSing = ConsumeASCII
+      expected = toBytes resSing
+  put = mapM_ put . toBytes
+
+instance Show (MatchASCII ctx ascii) where
+  show ConsumeASCII = "Marker [ " <> symbolVal (Proxy :: Proxy ascii) <> " ]"
+
+instance (KnownSymbol ctx, KnownSymbol ascii) => Arbitrary (MatchASCII ctx ascii) where
+  arbitrary = pure matchASCII
+
+-- | Produce the (singleton) value of type 'MatchASCII' @ctx ascii@.
+matchASCII :: (KnownSymbol ctx, KnownSymbol ascii) => MatchASCII ctx ascii
+matchASCII = ConsumeASCII
 
 
 -- | An @a@ serialized in little endian byte order.

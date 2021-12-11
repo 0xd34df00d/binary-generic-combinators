@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE DerivingVia, DeriveGeneric #-}
+{-# LANGUAGE DerivingVia, DeriveGeneric, DeriveAnyClass #-}
 {-# LANGUAGE DataKinds #-}
 
 import Data.Binary
@@ -50,6 +50,13 @@ data ComplexType
   deriving (Show, Eq, Generic)
   deriving Binary via Alternatively ComplexType
 
+newtype WithBytesMarker = WithBytesMarker (MatchBytes "test context" [ 113, 111, 105, 102 ])
+  deriving (Show, Eq, Generic)
+  deriving anyclass Binary
+newtype WithASCIIMarker = WithASCIIMarker (MatchASCII "test context" "qoif")
+  deriving (Show, Eq, Generic)
+  deriving anyclass Binary
+
 instance Arbitrary ComplexType where
   arbitrary = genericArbitrary
   shrink = genericShrink
@@ -80,6 +87,9 @@ main = hspec $ do
     it "decoding Word16" $ property $ \(n :: Word16) -> getLE (decode $ encode n) `shouldBe` swapBytes n
     it "decoding Word32" $ property $ \(n :: Word32) -> getLE (decode $ encode n) `shouldBe` swapBytes n
     it "decoding Word64" $ property $ \(n :: Word64) -> getLE (decode $ encode n) `shouldBe` swapBytes n
+  describe "MatchASCII" $ do
+    it "matches MatchBytes when encoding" $ decode (encode $ WithASCIIMarker matchASCII) `shouldBe` WithBytesMarker matchBytes
+    it "matches MatchBytes when decoding" $ decode (encode $ WithBytesMarker matchBytes) `shouldBe` WithASCIIMarker matchASCII
 
 swapBytes :: Bytes a => a -> a
 swapBytes n = case targetByteOrder of
