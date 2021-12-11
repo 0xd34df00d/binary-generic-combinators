@@ -1,5 +1,10 @@
 # Changelog for binary-generic-combinators
 
+## v0.4.4.0
+
+- Add `MatchASCII` helper.
+- Minor documentation improvements.
+
 ## v0.4.3.0
 
 - Add `LE` newtype wrapper for little endian (de)serialization.
