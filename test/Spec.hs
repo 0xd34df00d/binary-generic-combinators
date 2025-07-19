@@ -6,7 +6,7 @@ import Data.Binary
 import Data.Int
 import GHC.Generics
 import Test.Hspec
-import Test.QuickCheck
+import Test.QuickCheck (property)
 import Test.QuickCheck.Arbitrary.Generic
 import System.ByteOrder
 

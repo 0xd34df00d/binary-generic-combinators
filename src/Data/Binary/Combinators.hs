@@ -49,7 +49,7 @@ import Data.Kind
 import Data.Proxy
 import GHC.TypeLits
 import Numeric
-import Test.QuickCheck
+import Test.QuickCheck (Arbitrary(..), getNonEmpty)
 
 
 -- | Zero or more elements of @a@, parsing as long as the parser for @a@ succeeds.
