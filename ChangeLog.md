@@ -1,5 +1,9 @@
 # Changelog for binary-generic-combinators
 
+## v0.4.4.1
+
+- QuickCheck 2.16 compatibility.
+
 ## v0.4.4.0
 
 - Add `MatchASCII` helper.
